@@ -1,40 +1,36 @@
 # Fase 2 - RAW.hq - Status Atual
 
-## Status: ⏳ BLOQUEADO (Ação Manual Necessária)
+## Status: ⏳ BLOQUEADO (Token ainda inválido para deploy)
 
-## Problema
-O deploy da VM gratuita falhou com erro: "the token you have provided is invalid"
+## Última Tentativa: 2026-08-12
 
-## Diagnóstico
-- Conta RAW.hq criada com sucesso: `icarogalvao5@gmail.com`
-- CLI autenticado corretamente
-- Token configurado no arquivo: `C:\Users\Utilizador\.raw\config.json`
-- Sistema enviou NOVO TOKEN para o email (token anterior parece sem permissão de deploy)
+## Conta RAW.hq
+- **Email:** `icarogalvao5@gmail.com`
+- **API Token:** `<RAW_API_TOKEN>`
+- **CLI:** `rawhq@0.6.0` instalado globalmente via npm
+- **Config:** `C:\Users\Utilizador\.raw\config.json`
+- **Variável de ambiente:** `RAW_API_TOKEN` configurada (User scope)
+- **Autenticação:** `raw whoami` funciona ✅
+- **Deploy:** Falha com "the token you have provided is invalid" ❌
+
+## Diagnóstico Atualizado (2026-08-12)
+- Conta criada com sucesso e CLI autenticado
+- `raw whoami` reconhece a conta corretamente
+- O novo token `<RAW_API_TOKEN>` foi configurado
+- Deploy continua a falhar - pode ser necessário:
+  1. Verificação de email pendente
+  2. Ativação manual da conta no dashboard RAW.hq
+  3. Limitação do plano gratuito (free tier pode não estar disponível)
 
 ## Ação Necessária
-1. **Verificar email** `icarogalvao5@gmail.com` para o novo token RAW.hq
-2. **Atualizar token** no arquivo de configuração ou re-executar `raw init`
-3. **Tentar deploy novamente**: `raw deploy --type raw-free --region eu`
-
-## Comandos para Continuar
-
-### Após obter novo token:
-```bash
-# Opção 1: Re-autenticar
-raw logout
-echo "icarogalvao5@gmail.com" | raw init
-
-# Opção 2: Atualizar token manualmente
-# Editar C:\Users\Utilizador\.raw\config.json
-# Substituir "apiToken" pelo novo token do email
-
-# Deploy
-raw deploy --type raw-free --region eu
-```
+1. **Verificar email** `icarogalvao5@gmail.com` para links de verificação/ativação
+2. **Verificar dashboard RAW.hq** em https://app.rawhq.io para status da conta
+3. **Contactar suporte RAW.hq** se o problema persistir
 
 ## Comandos de Verificação
 ```bash
 # Verificar status da conta
+$env:RAW_API_TOKEN = "<RAW_API_TOKEN>"
 raw whoami
 
 # Listar servers (se houver algum)
@@ -45,12 +41,15 @@ raw types
 
 # Verificar regiões disponíveis
 raw regions
+
+# Tentar deploy novamente
+raw deploy --type raw-free --region eu
 ```
 
 ## Especificações da VM Gratuita (raw-free)
 - **CPU:** 2 vCPU
 - **RAM:** 4 GB
-- **Storage:** 40 GB SSD
+- **Storage:** 40 GB SSD NVMe
 - **OS:** Ubuntu 24.04
 - **Custo:** $0/mo (grátis)
 - **Região:** eu (Alemanha)

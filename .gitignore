@@ -1,0 +1,22 @@
+# Environment variables (credentials)
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Temporary
+tmp/
+temp/
