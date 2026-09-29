@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  healthcheck:
+    image: python:3.11-slim
+    container_name: qwenpaw-healthcheck
+    volumes:
+      - ./healthcheck.py:/app/healthcheck.py:ro
+      - ./qwenpaw-health.log:/app/qwenpaw-health.log
+    working_dir: /app
+    command: python healthcheck.py
+    restart: unless-stopped
+    # Este container usa ~30-50MB RAM

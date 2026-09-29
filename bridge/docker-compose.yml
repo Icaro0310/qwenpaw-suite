@@ -1,0 +1,14 @@
+services:
+  bridge:
+    build: .
+    container_name: qwenpaw-bridge
+    ports:
+      - "5000:5000"
+    environment:
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - BRIDGE_API_KEY=${BRIDGE_API_KEY:-}
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 128m
