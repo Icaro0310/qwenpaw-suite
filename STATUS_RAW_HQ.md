@@ -5,7 +5,7 @@
 ## Última Tentativa: 2026-08-12
 
 ## Conta RAW.hq
-- **Email:** `icarogalvao5@gmail.com`
+- **Email:** `<your-email>` (conta pessoal do maintainer)
 - **API Token:** `<RAW_API_TOKEN>`
 - **CLI:** `rawhq@0.6.0` instalado globalmente via npm
 - **Config:** `C:\Users\Utilizador\.raw\config.json`
@@ -23,7 +23,7 @@
   3. Limitação do plano gratuito (free tier pode não estar disponível)
 
 ## Ação Necessária
-1. **Verificar email** `icarogalvao5@gmail.com` para links de verificação/ativação
+1. **Verificar email** da conta para links de verificação/ativação
 2. **Verificar dashboard RAW.hq** em https://app.rawhq.io para status da conta
 3. **Contactar suporte RAW.hq** se o problema persistir
 
