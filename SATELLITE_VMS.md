@@ -1,112 +1,41 @@
-# VMs Satélite - Configuração e Deploy
+# Satellite hosts / Hosts satélite
 
-## Visão Geral
+## English
 
-As VMs satélite NÃO rodam QwenPaw (RAM insuficiente). Servem apenas para:
-- Ping de keepalive (manter Platform/RAW.hq acordados)
-- Healthcheck distribuído
-- Webhook de notificação
+The satellite utility is a generic HTTP pinger; this repository does not name,
+provision, or contain credentials for any remote host.
 
-Script utilizado: `satellite-ping.py` (do repo qwenpaw-orchestrator)
+1. Copy or clone this repository on a host you administer.
+2. Install Python 3 and `requests` (`python3 -m pip install requests`, or use a
+   virtual environment).
+3. Set `VM_NAME` and `PING_TARGETS` (`name=url` pairs are used by the
+   orchestrator healthcheck; the standalone pinger accepts comma-separated
+   URLs). Set `WEBHOOK_URL` only if you want failure notifications.
+4. Run `python3 orchestrator/satellite-ping.py --once` and verify its JSON
+   result before scheduling it.
+5. If periodic execution is needed, use cron/systemd on Linux/BSD or Task
+   Scheduler on Windows. Choose a cadence appropriate for your provider.
 
----
+The utility sends HTTP GET requests to configured endpoints; it does not run
+QwenPaw, install a remote agent, or keep a host awake unless the target service
+itself treats those requests as activity.
 
-## VM 1: Serv00
+## Português (BR)
 
-| Spec | Valor |
-|------|-------|
-| OS | FreeBSD |
-| RAM | 520 MB |
-| Função | Ping para AgentScope Platform |
-| Schedule | `*/10 * * * *` (cada 10 min) |
+O utilitário satélite é um pinger HTTP genérico; este repositório não identifica
+nem provisiona hosts remotos e não contém as respetivas credenciais.
 
-### Deploy
-```bash
-# SSH para Serv00
-ssh user@serv00.example.com
+1. Copia ou clona o repositório num host que administras.
+2. Instala Python 3 e `requests` (`python3 -m pip install requests`, de
+   preferência num virtualenv).
+3. Define `VM_NAME` e `PING_TARGETS` (o healthcheck aceita pares `name=url`; o
+   pinger standalone aceita URLs separados por vírgula). Define `WEBHOOK_URL`
+   só se quiseres alertas de falha.
+4. Executa `python3 orchestrator/satellite-ping.py --once` e verifica o JSON
+   antes de agendar.
+5. Se precisares de execução periódica, usa cron/systemd em Linux/BSD ou Task
+   Scheduler no Windows. Escolhe uma cadência adequada ao provider.
 
-# Instalar dependências
-pip install requests
-
-# Copiar script
-scp satellite-ping.py user@serv00.example.com:~/
-
-# Configurar variáveis
-export VM_NAME=serv00
-export PING_TARGETS=https://platform.agentscope.io/api/health
-export PING_INTERVAL=600
-
-# Crontab
-crontab -e
-# Adicionar:
-*/10 * * * * cd ~ && VM_NAME=serv00 PING_TARGETS=https://platform.agentscope.io/api/health python3 satellite-ping.py --once >> ping.log 2>&1
-```
-
----
-
-## VM 2: Sanfeng
-
-| Spec | Valor |
-|------|-------|
-| RAM | 1 GB |
-| Função | Ping para RAW.hq |
-| Schedule | `*/10 * * * *` (cada 10 min) |
-
-### Deploy
-```bash
-ssh user@sanfeng.example.com
-pip install requests
-# Copiar satellite-ping.py
-
-# Crontab
-*/10 * * * * cd ~ && VM_NAME=sanfeng PING_TARGETS=http://raw-hq-ip:8080/health python3 satellite-ping.py --once >> ping.log 2>&1
-```
-
----
-
-## VM 3: MonkeysCloud
-
-| Spec | Valor |
-|------|-------|
-| RAM | 1 GB |
-| Hibernação | Após 30 min inatividade |
-| Função | Ping dual (Platform + RAW.hq) |
-| Schedule | `*/20 * * * *` (cada 20 min — antes dos 30min de hibernação) |
-
-### Deploy
-```bash
-ssh user@monkeyscloud.example.com
-pip install requests
-
-# Crontab — a cada 20min para evitar hibernação
-*/20 * * * * cd ~ && VM_NAME=monkeyscloud PING_TARGETS=https://platform.agentscope.io/api/health,http://raw-hq-ip:8080/health python3 satellite-ping.py --once >> ping.log 2>&1
-```
-
----
-
-## VM 4: Lunes
-
-| Spec | Valor |
-|------|-------|
-| RAM | 128 MB |
-| Função | Healthcheck mínimo |
-| Schedule | `*/30 * * * *` (cada 30 min) |
-
-### Deploy
-```bash
-ssh user@lunes.example.com
-pip install requests
-
-# Script mínimo (128MB RAM = muito limitado)
-*/30 * * * * cd ~ && VM_NAME=lunes PING_TARGETS=https://platform.agentscope.io/api/health python3 satellite-ping.py --once >> ping.log 2>&1
-```
-
----
-
-## Notas
-
-- **Nenhuma VM satélite roda QwenPaw** (RAM insuficiente)
-- Apenas scripts Python simples: ping, cron, webhook
-- Dependência única: `requests` (instalável via pip)
-- Logs rotativos recomendados para VMs com pouco storage
-- URLs dos targets serão atualizadas quando os serviços estiverem configurados
+O utilitário faz pedidos HTTP GET aos endpoints configurados; não instala um
+agente remoto nem mantém um host acordado, a menos que o próprio serviço conte
+esses pedidos como atividade.

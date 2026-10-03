@@ -11,24 +11,40 @@ import json
 import logging
 import requests
 from datetime import datetime, timezone
+from urllib.parse import urlsplit, urlunsplit
 
 # --- Config ---
-PLATFORM_URL = os.environ.get('PLATFORM_URL', 'https://platform.agentscope.io/api/health')
-RAW_URL = os.environ.get('RAW_URL', '')  # Bloqueado por enquanto
-BRIDGE_URL = os.environ.get('BRIDGE_URL', 'http://localhost:5000/health')
-OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434/api/tags')
-WEBHOOK_URL = os.environ.get('WEBHOOK_URL', '')  # Notificação webhook (opcional)
-CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', '3600'))  # 1 hora
+PLATFORM_URL = os.environ.get('PLATFORM_URL', '')
+RAW_URL = os.environ.get('RAW_URL', '')
+BRIDGE_URL = os.environ.get('BRIDGE_URL', 'http://127.0.0.1:5000/health')
+OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://127.0.0.1:11434/api/tags')
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL', '')
+CHECK_INTERVAL = int(os.environ.get('CHECK_INTERVAL', '3600'))
+LOG_FILE = os.environ.get('HEALTHCHECK_LOG', 'qwenpaw-health.log')
+REPORT_FILE = os.environ.get('HEALTHCHECK_REPORT', 'qwenpaw-status.json')
 
-# Satellite VMs (ping endpoints - configurar quando disponíveis)
-SATELLITES = {
-    'Serv00': os.environ.get('SERV00_URL', ''),       # FreeBSD, 520MB
-    'Sanfeng': os.environ.get('SANFENG_URL', ''),      # 1GB RAM
-    'MonkeysCloud': os.environ.get('MONKEYS_URL', ''), # 1GB, hiberna 30min
-    'Lunes': os.environ.get('LUNES_URL', ''),          # 128MB RAM
-}
 
-LOG_FILE = 'qwenpaw-health.log' if os.name == 'nt' else '/tmp/qwenpaw-health.log'
+def _satellite_targets(value):
+    targets = {}
+    for item in value.split(','):
+        name, separator, url = item.partition('=')
+        if separator and name.strip() and url.strip():
+            targets[name.strip()] = url.strip()
+    return targets
+
+
+SATELLITES = _satellite_targets(os.environ.get('SATELLITE_URLS', ''))
+
+
+def _safe_url(url):
+    parts = urlsplit(url)
+    host = parts.hostname or ''
+    try:
+        if parts.port:
+            host = f"{host}:{parts.port}"
+    except ValueError:
+        pass
+    return urlunsplit((parts.scheme, host, parts.path, '', ''))
 
 logging.basicConfig(
     filename=LOG_FILE,
@@ -44,25 +60,26 @@ log.addHandler(console)
 
 
 def ping(url, name, timeout=10):
-    """Ping a service and return status dict."""
+    """Ping a service and return a report with URL credentials/query removed."""
     if not url:
         return {"name": name, "status": "skipped", "url": "", "ms": 0}
+    safe_url = _safe_url(url)
     try:
         start = time.time()
         r = requests.get(url, timeout=timeout)
         elapsed = round((time.time() - start) * 1000)
         status = "ok" if r.status_code == 200 else f"error_{r.status_code}"
         log.info(f"{name}: {status} ({elapsed}ms)")
-        return {"name": name, "status": status, "url": url, "ms": elapsed, "code": r.status_code}
+        return {"name": name, "status": status, "url": safe_url, "ms": elapsed, "code": r.status_code}
     except requests.exceptions.Timeout:
         log.warning(f"{name}: TIMEOUT")
-        return {"name": name, "status": "timeout", "url": url, "ms": timeout * 1000}
+        return {"name": name, "status": "timeout", "url": safe_url, "ms": timeout * 1000}
     except requests.exceptions.ConnectionError:
         log.error(f"{name}: CONNECTION_REFUSED")
-        return {"name": name, "status": "down", "url": url, "ms": 0}
+        return {"name": name, "status": "down", "url": safe_url, "ms": 0}
     except Exception as e:
-        log.error(f"{name}: FAILED - {e}")
-        return {"name": name, "status": "error", "url": url, "ms": 0, "error": str(e)}
+        log.error(f"{name}: FAILED - {type(e).__name__}")
+        return {"name": name, "status": "error", "url": safe_url, "ms": 0, "error": type(e).__name__}
 
 
 def generate_report(results):
@@ -95,12 +112,12 @@ def send_webhook(report):
         requests.post(WEBHOOK_URL, json=report, timeout=10)
         log.info("Webhook notification sent")
     except Exception as e:
-        log.error(f"Webhook failed: {e}")
+        log.error(f"Webhook failed: {type(e).__name__}")
 
 
 def save_report(report):
-    """Save latest report to JSON file."""
-    report_file = 'qwenpaw-status.json' if os.name == 'nt' else '/tmp/qwenpaw-status.json'
+    """Save latest report to the configured JSON file."""
+    report_file = REPORT_FILE
     with open(report_file, 'w') as f:
         json.dump(report, f, indent=2)
     log.info(f"Report saved to {report_file}")

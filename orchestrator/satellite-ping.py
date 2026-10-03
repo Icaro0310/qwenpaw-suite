@@ -15,21 +15,15 @@ Variáveis de ambiente:
   WEBHOOK_URL    - URL para notificação de falha (opcional)
   VM_NAME        - Nome desta VM para identificação
 
-Crontab examples:
-  # Serv00 (FreeBSD) - ping a cada 10min
-  */10 * * * * cd /home/user && python3 satellite-ping.py --once >> ping.log 2>&1
-
-  # MonkeysCloud - ping a cada 20min (hibernates after 30min)
-  */20 * * * * cd /home/user && python3 satellite-ping.py --once >> ping.log 2>&1
-
-  # Lunes (128MB) - ping a cada 30min (minimal)
-  */30 * * * * cd /home/user && python3 satellite-ping.py --once >> ping.log 2>&1
+Cron example (replace the URL and schedule with your own service):
+  */10 * * * * cd /path/to/qwenpaw-suite && python3 orchestrator/satellite-ping.py --once >> ping.log 2>&1
 """
 import os
 import sys
 import time
 import json
 import logging
+from urllib.parse import urlsplit, urlunsplit
 from datetime import datetime, timezone
 
 try:
@@ -43,9 +37,19 @@ VM_NAME = os.environ.get('VM_NAME', 'satellite-unknown')
 PING_INTERVAL = int(os.environ.get('PING_INTERVAL', '600'))
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', '')
 
-# Default targets
-DEFAULT_TARGETS = 'https://platform.agentscope.io/api/health'
-PING_TARGETS = os.environ.get('PING_TARGETS', DEFAULT_TARGETS).split(',')
+PING_TARGETS = os.environ.get('PING_TARGETS', '').split(',')
+
+
+def safe_url(url):
+    parts = urlsplit(url)
+    host = parts.hostname or ''
+    try:
+        if parts.port:
+            host = f"{host}:{parts.port}"
+    except ValueError:
+        pass
+    return urlunsplit((parts.scheme, host, parts.path, '', ''))
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -55,26 +59,27 @@ log = logging.getLogger('satellite')
 
 
 def ping_target(url, timeout=15):
-    """Ping a single URL and return result."""
+    """Ping a configured URL; logs/reports omit credentials and query strings."""
     url = url.strip()
     if not url:
         return None
+    display_url = safe_url(url)
     try:
         start = time.time()
         r = requests.get(url, timeout=timeout, headers={'User-Agent': f'QwenPaw-Satellite/{VM_NAME}'})
         elapsed = round((time.time() - start) * 1000)
         status = 'ok' if r.status_code == 200 else f'error_{r.status_code}'
-        log.info(f"PING {url} -> {status} ({elapsed}ms)")
-        return {'url': url, 'status': status, 'ms': elapsed, 'code': r.status_code}
+        log.info(f"PING {display_url} -> {status} ({elapsed}ms)")
+        return {'url': display_url, 'status': status, 'ms': elapsed, 'code': r.status_code}
     except requests.exceptions.Timeout:
-        log.warning(f"PING {url} -> TIMEOUT")
-        return {'url': url, 'status': 'timeout', 'ms': timeout * 1000}
+        log.warning(f"PING {display_url} -> TIMEOUT")
+        return {'url': display_url, 'status': 'timeout', 'ms': timeout * 1000}
     except requests.exceptions.ConnectionError:
-        log.error(f"PING {url} -> DOWN")
-        return {'url': url, 'status': 'down', 'ms': 0}
-    except Exception as e:
-        log.error(f"PING {url} -> ERROR: {e}")
-        return {'url': url, 'status': 'error', 'ms': 0, 'error': str(e)}
+        log.error(f"PING {display_url} -> DOWN")
+        return {'url': display_url, 'status': 'down', 'ms': 0}
+    except Exception as error:
+        log.error(f"PING {display_url} -> ERROR: {type(error).__name__}")
+        return {'url': display_url, 'status': 'error', 'ms': 0, 'error': type(error).__name__}
 
 
 def notify_failure(results):

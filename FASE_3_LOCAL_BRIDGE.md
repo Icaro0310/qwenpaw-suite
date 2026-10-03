@@ -1,124 +1,92 @@
-# Fase 3 - Local Bridge - Configuração Completa
+# Local bridge setup / Configuração da bridge local
 
-## Status: ✅ COMPLETO
+## English
 
-## Configurações Realizadas
+The Flask bridge converts OpenAI-compatible chat requests to Ollama's generate
+API. It is useful when an external client can target an OpenAI-style endpoint
+but the model should run in your own Ollama environment.
 
-### 1. Bridge Python (Ollama ↔ Cloud)
-- **Localização:** `C:\Users\Utilizador\qwenpaw-bridge\`
-- **Função:** Proxy HTTP para Ollama local, acessível externamente via tunnel
-- **Porta local:** 5000
-- **Endpoints:**
-  - `GET /health` - Status do serviço
-  - `GET /api/tags` - Lista modelos Ollama
-  - `POST /api/generate` - Gera resposta via Ollama
+### Windows (PowerShell)
 
-### 2. Healthcheck Local
-- **Localização:** `C:\Users\Utilizador\qwenpaw-orchestrator\`
-- **Função:** Monitoramento periódico dos serviços
-- **Frequência:** A cada 1 hora
-- **Serviços monitorados:**
-  - Ollama Local
-  - Bridge
-  - AgentScope Platform (quando configurado)
-  - RAW.hq (quando configurado)
+From the repository root:
 
-### 3. Ollama Local
-- **Configuração:** Host binding alterado para `0.0.0.0:11434`
-- **Modelos disponíveis:**
-  - `llama3.2:1b` (1.2B parâmetros)
-  - `qwen2.5-coder:1.5b` (1.5B parâmetros)
-- **Status:** Rodando e acessível via bridge
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r bridge\requirements.txt
+$env:OLLAMA_URL = 'http://localhost:11434'
+python bridge\bridge.py
+```
 
-### 4. Docker Containers
-- **qwenpaw-bridge:** ~100MB RAM
-- **qwenpaw-healthcheck:** ~50MB RAM
-- **Total:** ~150MB RAM (conforme especificado)
+### Linux
 
-### 5. ngrok
-- **Instalado:** `C:\Users\Utilizador\qwenpaw-bridge\ngrok.exe`
-- **Função:** Expor bridge para internet (quando necessário)
-- **Comando:** `ngrok http 5000`
-
-## Scripts de Startup
-
-### start-all.bat
-Localização: `C:\Users\Utilizador\qwenpaw-bridge\start-all.bat`
-
-**Funcionalidades:**
-1. Inicia Ollama (se necessário)
-2. Inicia Bridge Docker
-3. Inicia Healthcheck Docker
-4. Inicia ngrok tunnel
-5. Para todos os serviços ao final
-
-**Uso:**
 ```bash
-C:\Users\Utilizador\qwenpaw-bridge\start-all.bat
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r bridge/requirements.txt
+export OLLAMA_URL='http://127.0.0.1:11434'
+python bridge/bridge.py
 ```
 
-## Próximos Passos (Configuração Manual)
+The default listener is `127.0.0.1:5000`; no API key is needed for loopback.
+When binding to a non-loopback address, set `BRIDGE_API_KEY`. Requests to the
+protected endpoints must include `Authorization: Bearer <key>`. CORS is off by
+default; browser clients need an explicit `BRIDGE_CORS_ORIGINS` allowlist.
 
-### 1. Configurar ngrok authtoken
+Endpoints:
+
+| Method / path | Purpose | Auth |
+|---|---|---|
+| `GET /health` | Ollama reachability status | No; response omits the Ollama URL |
+| `GET /api/tags` | Ollama model list | Bearer key when configured |
+| `POST /api/generate` | Native Ollama prompt | Bearer key when configured |
+| `GET /v1/models` | OpenAI-style model list | Bearer key when configured |
+| `POST /v1/chat/completions` | OpenAI-compatible chat request | Bearer key when configured |
+
+The Docker Compose setup is in `bridge/`; it binds the host port to loopback
+and requires `BRIDGE_API_KEY`. No public tunnel is started automatically.
+
+## Português (BR)
+
+A bridge Flask converte pedidos de chat compatíveis com OpenAI para a API
+generate do Ollama. É útil quando um cliente externo aceita endpoint OpenAI,
+mas o modelo deve rodar no teu Ollama.
+
+### Windows (PowerShell)
+
+Na raiz do repositório:
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r bridge\requirements.txt
+$env:OLLAMA_URL = 'http://localhost:11434'
+python bridge\bridge.py
+```
+
+### Linux
+
 ```bash
-cd C:\Users\Utilizador\qwenpaw-bridge
-ngrok config add-authtoken <SEU_TOKEN>
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r bridge/requirements.txt
+export OLLAMA_URL='http://127.0.0.1:11434'
+python bridge/bridge.py
 ```
 
-### 2. Obter URL pública do ngrok
-```bash
-ngrok http 5000
-```
-Copiar a URL gerada (ex: `https://abc123.ngrok.io`)
+O listener padrão é `127.0.0.1:5000`; em loopback não requer API key. Para bind
+fora de loopback, define `BRIDGE_API_KEY`. Os endpoints protegidos exigem
+`Authorization: Bearer <key>`. CORS fica desligado por omissão; clientes browser
+precisam de uma allowlist explícita em `BRIDGE_CORS_ORIGINS`.
 
-### 3. Configurar Ollama-Local-Bridge na AgentScope Platform
-- Console → Models → Add Provider
-- Name: `Ollama-Local-Bridge`
-- Type: `Ollama`
-- Base URL: `https://abc123.ngrok.io` (URL do ngrok)
-- Model: `llama3.2:1b` ou `qwen2.5-coder:1.5b`
-- Colocar como último na fallback chain
+| Método / path | Propósito | Auth |
+|---|---|---|
+| `GET /health` | Estado de ligação ao Ollama | Não; a resposta omite a URL |
+| `GET /api/tags` | Lista de modelos Ollama | Bearer key quando configurada |
+| `POST /api/generate` | Prompt na API nativa Ollama | Bearer key quando configurada |
+| `GET /v1/models` | Lista de modelos formato OpenAI | Bearer key quando configurada |
+| `POST /v1/chat/completions` | Chat compatível com OpenAI | Bearer key quando configurada |
 
-## Estrutura de Diretórios
-
-```
-C:\Users\Utilizador\
-├── qwenpaw-bridge\
-│   ├── bridge.py              # Script Flask
-│   ├── requirements.txt      # Dependências Python
-│   ├── Dockerfile            # Config Docker
-│   ├── docker-compose.yml    # Orquestração Docker
-│   ├── ngrok.exe            # ngrok binary
-│   └── start-all.bat        # Script startup
-├── qwenpaw-orchestrator\
-│   ├── healthcheck.py       # Script monitoramento
-│   ├── docker-compose.yml   # Orquestração Docker
-│   └── qwenpaw-health.log   # Logs
-└── qwenpaw-sync\
-    └── README.md            # Repo sync
-```
-
-## Verificação
-
-**Testar bridge:**
-```bash
-curl http://localhost:5000/health
-curl http://localhost:5000/api/tags
-```
-
-**Verificar containers:**
-```bash
-docker ps
-```
-
-**Verificar Ollama:**
-```bash
-ollama list
-```
-
-## Notas
-
-- Ollama está configurado para aceitar conexões externas (`0.0.0.0:11434`)
-- Bridge usa IP local (`192.168.1.154`) para conectar ao Ollama
-- Healthcheck gera logs em `qwenpaw-health.log`
-- RAM total preservada (~150MB para serviços leves)
+A configuração Docker Compose fica em `bridge/`; a porta do host fica em
+loopback e exige `BRIDGE_API_KEY`. Nenhum túnel público é iniciado
+automaticamente.

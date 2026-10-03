@@ -1,50 +1,46 @@
-# Cron Schedule - Infraestrutura QwenPaw
+# Scheduling examples / Exemplos de agendamento
 
-## AgentScope Platform
+## English
 
-| Job | Cron Expression | Hora | Descrição |
-|-----|----------------|------|-----------|
-| Heartbeat Keepalive | `0 */12 * * *` | 00:00, 12:00 | Mantém Platform acordada (sleep após 48h) |
-| Daily Digest | `0 8 * * *` | 08:00 | Briefing matinal: tarefas, notícias, status projetos |
-| News Scan | `0 14 * * *` | 14:00 | Scan Hacker News, ArXiv, GitHub trending |
+No schedule is installed by this repository. Choose intervals based on the
+service limits and availability you control.
 
-## Máquina Local
+- `orchestrator/healthcheck.py` runs once with `--once`; without it, the
+  process repeats using `CHECK_INTERVAL` (default 3600 seconds).
+- `orchestrator/satellite-ping.py --once` performs one round. Use cron or
+  Windows Task Scheduler if you want periodic checks.
+- `orchestrator/sync-github.py` is dry-run by default. A scheduled mutating
+  sync must explicitly include `--apply` (or `--auto`), and will stage all
+  changes, commit and push `origin/main` for the selected repository.
 
-| Job | Cron Expression | Intervalo | Descrição |
-|-----|----------------|-----------|-----------|
-| Healthcheck | `0 * * * *` | 1 hora | Verifica Ollama, Bridge, Platform, Satellites |
-| Git Sync | `0 */6 * * *` | 6 horas | Sync automático do repo qwenpaw-sync |
+Example Linux cron line, after configuring the variables in a protected
+service environment:
 
-## VMs Satélite
-
-| VM | Cron Expression | Intervalo | Target |
-|----|----------------|-----------|--------|
-| Serv00 | `*/10 * * * *` | 10 min | AgentScope Platform |
-| Sanfeng | `*/10 * * * *` | 10 min | RAW.hq |
-| MonkeysCloud | `*/20 * * * *` | 20 min | Platform + RAW.hq |
-| Lunes | `*/30 * * * *` | 30 min | Platform |
-
-## Timeline Diária
-
-```
-00:00  ▐ Heartbeat keepalive
-       │
-06:00  ▐ Git sync
-       │
-08:00  ▐ Daily Digest → Telegram
-       │
-10:00  │
-       │
-12:00  ▐ Heartbeat keepalive
-       ▐ Git sync
-       │
-14:00  ▐ News Scan (HN + ArXiv)
-       │
-18:00  ▐ Git sync
-       │
-00:00  ▐ Git sync
-       ▐ Heartbeat keepalive
+```cron
+*/15 * * * * cd /path/to/qwenpaw-suite && python3 orchestrator/satellite-ping.py --once
 ```
 
-Satellites pingam continuamente a cada 10-30 min.
-Healthcheck local roda a cada hora.
+Do not put API keys, webhook URLs or tunnel tokens directly in a crontab or
+tracked file.
+
+## Português (BR)
+
+Este repositório não instala nenhum agendamento. Escolhe intervalos de acordo
+com os limites e a disponibilidade dos serviços que controlas.
+
+- `orchestrator/healthcheck.py --once` faz uma verificação; sem essa opção o
+  processo repete com `CHECK_INTERVAL` (padrão 3600 segundos).
+- `orchestrator/satellite-ping.py --once` executa uma ronda. Usa cron ou Task
+  Scheduler do Windows se quiseres verificações periódicas.
+- `orchestrator/sync-github.py` é dry-run por omissão. Um sync agendado que
+  altera dados precisa incluir explicitamente `--apply` (ou `--auto`), e faz
+  stage de todas as alterações, commit e push de `origin/main`.
+
+Exemplo cron Linux, depois de configurares as variáveis num ambiente protegido:
+
+```cron
+*/15 * * * * cd /path/to/qwenpaw-suite && python3 orchestrator/satellite-ping.py --once
+```
+
+Não coloques API keys, URLs de webhook ou tokens de túnel diretamente no
+crontab ou em ficheiros rastreados.

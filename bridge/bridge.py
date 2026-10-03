@@ -19,13 +19,22 @@ from functools import wraps
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+try:
+    from .security import authorized, validate_binding
+except ImportError:
+    from security import authorized, validate_binding
+
 # --- Config ---
 OLLAMA_URL = os.environ.get('OLLAMA_URL', 'http://localhost:11434')
-BRIDGE_API_KEY = os.environ.get('BRIDGE_API_KEY', '')  # Opcional
+BRIDGE_API_KEY = os.environ.get('BRIDGE_API_KEY', '')
+BRIDGE_HOST = os.environ.get('BRIDGE_HOST', '127.0.0.1')
+BRIDGE_PORT = int(os.environ.get('BRIDGE_PORT', '5000'))
+CORS_ORIGINS = [origin.strip() for origin in os.environ.get('BRIDGE_CORS_ORIGINS', '').split(',') if origin.strip()]
 LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 
 app = Flask(__name__)
-CORS(app)
+if CORS_ORIGINS:
+    CORS(app, origins=CORS_ORIGINS)
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL),
@@ -37,10 +46,8 @@ log = logging.getLogger('qwenpaw-bridge')
 def require_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if BRIDGE_API_KEY:
-            auth = request.headers.get('Authorization', '')
-            if not auth.replace('Bearer ', '') == BRIDGE_API_KEY:
-                return jsonify({"error": "Unauthorized"}), 401
+        if not authorized(request.headers.get('Authorization', ''), BRIDGE_API_KEY):
+            return jsonify({"error": "Unauthorized"}), 401
         return f(*args, **kwargs)
     return decorated
 
@@ -56,7 +63,6 @@ def health():
         pass
     return jsonify({
         "status": "ok",
-        "ollama": OLLAMA_URL,
         "ollama_connected": ollama_ok,
         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
     })
@@ -180,7 +186,11 @@ def openai_chat():
         return jsonify({"error": {"message": str(e), "type": "server_error"}}), 500
 
 if __name__ == '__main__':
-    log.info(f"QwenPaw Bridge starting on 0.0.0.0:5000")
-    log.info(f"Ollama URL: {OLLAMA_URL}")
-    log.info(f"Auth: {'enabled' if BRIDGE_API_KEY else 'disabled'}")
-    app.run(host='0.0.0.0', port=5000)
+    try:
+        validate_binding(BRIDGE_HOST, BRIDGE_API_KEY)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
+    log.info(f"QwenPaw Bridge starting on {BRIDGE_HOST}:{BRIDGE_PORT}")
+    log.info(f"Auth: {'enabled' if BRIDGE_API_KEY else 'loopback only'}")
+    log.info(f"CORS origins: {len(CORS_ORIGINS)} configured")
+    app.run(host=BRIDGE_HOST, port=BRIDGE_PORT)
