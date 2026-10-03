@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="assets/banner.svg" alt="qwenpaw-suite" width="100%"/>
+
+</div>
+
 # QwenPaw Suite
 
 > Projeto comunitário independente; sem afiliação ou endosso da Cognition AI.
