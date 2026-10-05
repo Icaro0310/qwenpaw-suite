@@ -13,7 +13,7 @@
 > entirely — every `devin-*` tool works without it.** It is an add-on for
 > operators who already run, or want to run, their own model server.
 >
-**[Windows](README.windows.md)** · **[Linux](README.linux.md)** · English
+**[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)**
 
 QwenPaw Suite connects Ollama to OpenAI-compatible clients and provides small
 health-check, satellite-ping and Git synchronization utilities. It can run
