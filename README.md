@@ -15,6 +15,8 @@
 >
 **[Linux](README.linux.md)** · **[Personal Windows](README.windows.md)** · **[Corporate Windows](README.corporate-windows.md)**
 
+Part of the [awesome-devin](https://github.com/Icaro0310/awesome-devin) ecosystem: the curated hub for the devin-* tools.
+
 QwenPaw Suite connects Ollama to OpenAI-compatible clients and provides small
 health-check, satellite-ping and Git synchronization utilities. It can run
 locally on Windows or Linux. Cloud providers, tunnels and remote servers are
