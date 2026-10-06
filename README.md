@@ -2,6 +2,8 @@
 
 <img src="assets/banner.svg" alt="qwenpaw-suite" width="100%"/>
 
+<a href="https://github.com/Icaro0310/qwenpaw-suite/actions/workflows/ci.yml"><img src="https://github.com/Icaro0310/qwenpaw-suite/actions/workflows/ci.yml/badge.svg" alt="ci"/></a>
+
 </div>
 
 # QwenPaw Suite
