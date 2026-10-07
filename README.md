@@ -42,6 +42,15 @@ server, path or credential is required.
 | `orchestrator/sync-github.py` | Inspects a selected Git checkout; dry-run by default. With `--apply`/`--auto`, pulls, stages all changes, commits and pushes `origin/main`. | Only when you intentionally want that repository automation. Review the target first. |
 | `bridge/start-all.bat` | Windows helper that creates a local virtual environment and runs the local bridge. It does not start a public tunnel. | Quick local bridge start on Windows. |
 
+<!-- DIST-STATUS:BEGIN — generated from devin-powerups/registry.json -->
+> **Source-only distribution.** This project is not published to a package
+> registry. Run it from a checkout:
+>
+> ```bash
+> git clone https://github.com/Icaro0310/qwenpaw-suite.git
+> ```
+<!-- DIST-STATUS:END -->
+
 ## Requirements
 
 - Python 3.10 or newer for the Python components.
