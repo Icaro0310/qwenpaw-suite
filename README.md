@@ -41,6 +41,7 @@ server, path or credential is required.
 | `orchestrator/satellite-ping.py` | Pings operator-supplied URLs once or on a timer and optionally posts failures to a webhook. | Keep an external endpoint active or monitor it from a small host. |
 | `orchestrator/sync-github.py` | Inspects a selected Git checkout; dry-run by default. With `--apply`/`--auto`, pulls, stages all changes, commits and pushes `origin/main`. | Only when you intentionally want that repository automation. Review the target first. |
 | `bridge/start-all.bat` | Windows helper that creates a local virtual environment and runs the local bridge. It does not start a public tunnel. | Quick local bridge start on Windows. |
+| `bridge/start-all.sh` | POSIX equivalent of `start-all.bat` — same steps in the same order. `bridge/qwenpaw-bridge.service` is an optional `systemd --user` unit. | Quick local bridge start on Linux. |
 
 <!-- DIST-STATUS:BEGIN — generated from devin-powerups/registry.json -->
 > **Source-only distribution.** This project is not published to a package
@@ -84,6 +85,13 @@ python3 -m venv .venv
 python -m pip install -r bridge/requirements.txt -r orchestrator/requirements.txt
 export OLLAMA_URL='http://127.0.0.1:11434'
 python bridge/bridge.py
+```
+
+Or use the POSIX launcher — the same steps as `start-all.bat`, in order
+(it manages its own `.venv` inside `bridge/`):
+
+```bash
+./bridge/start-all.sh
 ```
 
 Check the local service with `curl http://localhost:5000/health`. Test a model:
@@ -189,8 +197,9 @@ have been committed previously.
 ## Platform support
 
 The bridge, healthcheck, satellite ping and sync scripts work on Windows and
-Linux. The batch launcher is Windows-only; Linux users run the documented
-Python commands or use their own service manager. Remote-provider credentials,
+Linux. The launcher exists for both platforms: `start-all.bat` on Windows and
+`start-all.sh` on Linux, with an optional `systemd --user` unit for running
+the bridge as a user service. Remote-provider credentials,
 network exposure and scheduling are operator choices, not bundled defaults.
 
 ## License
