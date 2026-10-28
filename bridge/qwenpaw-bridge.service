@@ -1,0 +1,29 @@
+# systemd --user unit for the qwenpaw-suite local bridge (optional).
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   sed "s|@BRIDGE_DIR@|$(cd "$(dirname "$0")" && pwd)|" \
+#       qwenpaw-bridge.service > ~/.config/systemd/user/qwenpaw-bridge.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now qwenpaw-bridge.service
+# Secrets (e.g. BRIDGE_API_KEY) go in ~/.config/qwenpaw-suite/bridge.env
+# as KEY=value lines — the file is optional (the '-' prefix ignores it
+# when absent) and is never committed.
+
+[Unit]
+Description=qwenpaw-suite local bridge (start-all.sh)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@BRIDGE_DIR@
+Environment=BRIDGE_HOST=127.0.0.1
+EnvironmentFile=-%h/.config/qwenpaw-suite/bridge.env
+# start-all.sh is idempotent: it creates .venv and installs
+# requirements when missing, then execs bridge.py in the foreground.
+ExecStart=@BRIDGE_DIR@/start-all.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
